@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Default Catch-all Global Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Handshake Heartbeat Verification
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // Root Primitive Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 2. Entity Validation Helpers
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'displayName', 'email', 'createdAt']) &&
+             data.keys().size() == 4 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.email is string && data.email.size() <= 128 &&
+             data.displayName is string && data.displayName.size() <= 128 &&
+             data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidUserSettings(data) {
+      return data.keys().hasAll(['id', 'userId', 'topics', 'location', 'newsSources', 'emailProvider', 'taskSource', 'includeCalendar', 'includeEmail', 'includeTasks']) &&
+             data.keys().size() == 10 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.location is string && data.location.size() <= 128 &&
+             data.topics is list && data.topics.size() <= 20 &&
+             (data.topics.size() == 0 || data.topics[0] is string) &&
+             data.newsSources is list && data.newsSources.size() <= 20 &&
+             data.emailProvider is string && data.emailProvider.size() <= 64 &&
+             data.taskSource is string && data.taskSource.size() <= 64 &&
+             data.includeCalendar is bool &&
+             data.includeEmail is bool &&
+             data.includeTasks is bool;
+    }
+
+    function isValidDailyBrief(data) {
+      return data.keys().hasAll(['id', 'userId', 'date', 'text', 'summaryBullets', 'hasAudio']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.date is string && data.date.size() == 10 &&
+             data.text is string && data.text.size() <= 150000 &&
+             data.summaryBullets is list && data.summaryBullets.size() <= 5 &&
+             (data.summaryBullets.size() == 0 || data.summaryBullets[0] is string) &&
+             data.hasAudio is bool &&
+             (!('audioUrl' in data) || (data.audioUrl is string && data.audioUrl.size() <= 6000000)) &&
+             (!('weatherContent' in data) || (data.weatherContent is string && data.weatherContent.size() <= 100000)) &&
+             (!('newsContent' in data) || (data.newsContent is string && data.newsContent.size() <= 100000)) &&
+             (!('calendarContent' in data) || (data.calendarContent is string && data.calendarContent.size() <= 100000)) &&
+             (!('emailsContent' in data) || (data.emailsContent is string && data.emailsContent.size() <= 100000)) &&
+             (!('tasksContent' in data) || (data.tasksContent is string && data.tasksContent.size() <= 100000));
+    }
+
+    function isValidDbTask(data) {
+      return data.keys().hasAll(['id', 'userId', 'date', 'title', 'status', 'priority']) &&
+             data.keys().size() == 6 &&
+             data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.date is string && data.date.size() == 10 &&
+             data.title is string && data.title.size() <= 1000 &&
+             data.status is string && (data.status == 'pending' || data.status == 'completed') &&
+             data.priority is string && (data.priority == 'high' || data.priority == 'medium' || data.priority == 'low');
+    }
+
+    // 3. Collection Match Rules
+
+    // Users Collection (Isolated PII)
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUser(incoming()) && incoming().id == existing().id && incoming().createdAt == existing().createdAt;
+    }
+
+    // Settings Collection
+    match /settings/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUserSettings(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidUserSettings(incoming()) && incoming().id == existing().id && incoming().userId == existing().userId;
+    }
+
+    // DailyBriefs Collection
+    match /dailyBriefs/{briefId} {
+      allow get, delete: if isSignedIn() && resource.data.userId == request.auth.uid && isValidId(briefId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(briefId) && incoming().userId == request.auth.uid && isValidDailyBrief(incoming());
+      allow update: if isSignedIn() && isValidId(briefId) && resource.data.userId == request.auth.uid && incoming().userId == request.auth.uid && isValidDailyBrief(incoming()) && incoming().id == existing().id;
+    }
+
+    // Tasks Collection
+    match /tasks/{taskId} {
+      allow get, delete: if isSignedIn() && resource.data.userId == request.auth.uid && isValidId(taskId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(taskId) && incoming().userId == request.auth.uid && isValidDbTask(incoming());
+      allow update: if isSignedIn() && isValidId(taskId) && resource.data.userId == request.auth.uid && incoming().userId == request.auth.uid && isValidDbTask(incoming()) && incoming().id == existing().id;
+    }
+  }
+}

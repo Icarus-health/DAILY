@@ -1,0 +1,6 @@
+{
+  "name": "Daily",
+  "description": "Make it Simple. A beautifully simple, highly intuitive daily dashboard and podcast briefing studio.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

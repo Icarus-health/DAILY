@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account information synchronized upon sign-in",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique user authentication ID" },
+        "displayName": { "type": "string", "description": "The user's display name" },
+        "email": { "type": "string", "format": "email", "description": "The user's email address" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "The date-time when the profile was synchronized" }
+      },
+      "required": ["id", "email", "createdAt"]
+    },
+    "UserSettings": {
+      "title": "User Settings",
+      "description": "User-specific parameters, notification settings, and topics of interest",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique identifier, matching user-id" },
+        "userId": { "type": "string", "description": "Reference user authentication identifier" },
+        "topics": {
+          "type": "array",
+          "description": "List of custom news interest categories"
+        },
+        "location": { "type": "string", "description": "Primary city for local weather summary" },
+        "newsSources": {
+          "type": "array",
+          "description": "Specified outlets or publishers to fetch feeds from"
+        },
+        "emailProvider": { "type": "string", "description": "Preferred mail provider integration" },
+        "taskSource": { "type": "string", "description": "Integration source for managing tasks" },
+        "includeCalendar": { "type": "boolean", "description": "Check if calendar is merged in compilation" },
+        "includeEmail": { "type": "boolean", "description": "Check if emails are merged in compilation" },
+        "includeTasks": { "type": "boolean", "description": "Check if tasks are merged in compilation" }
+      },
+      "required": ["id", "userId", "topics", "location"]
+    },
+    "DailyBrief": {
+      "title": "Daily Brief",
+      "description": "A customized daily briefing text, bullet outline, and audio configurations compiled by Gemini AI",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique briefing ID" },
+        "userId": { "type": "string", "description": "User authentication owner identifier" },
+        "date": { "type": "string", "format": "date", "description": "Target morning briefing date (YYYY-MM-DD)" },
+        "text": { "type": "string", "description": "Elegantly constructed conversational transcript of the morning" },
+        "summaryBullets": {
+          "type": "array",
+          "description": "Exactly 3 concise focus summary bulletins"
+        },
+        "hasAudio": { "type": "boolean", "description": "Presence indicator for voice synthesis capability" },
+        "audioUrl": { "type": "string", "description": "Optional Base64 synthesized speech mp3 source or external audio uri" },
+        "weatherContent": { "type": "string", "description": "Markdown weather overview content" },
+        "newsContent": { "type": "string", "description": "Markdown curated news summaries content" },
+        "calendarContent": { "type": "string", "description": "Markdown schedule and plan agenda content" },
+        "emailsContent": { "type": "string", "description": "Markdown prioritized emails summaries content" },
+        "tasksContent": { "type": "string", "description": "Markdown list of crucial outstanding tasks content" }
+      },
+      "required": ["id", "userId", "date", "text", "summaryBullets", "hasAudio"]
+    },
+    "DbTask": {
+      "title": "DbTask",
+      "description": "User-defined to-do item for their daily productivity schedule",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The task identifier" },
+        "userId": { "type": "string", "description": "User owner identification" },
+        "date": { "type": "string", "format": "date", "description": "Target schedule execution date (YYYY-MM-DD)" },
+        "title": { "type": "string", "description": "Text caption detailing the task action items" },
+        "status": { "type": "string", "enum": ["pending", "completed"], "description": "Current status of the task item" },
+        "priority": { "type": "string", "enum": ["high", "medium", "low"], "description": "Relative priority classification" }
+      },
+      "required": ["id", "userId", "date", "title", "status", "priority"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Private profile context of authenticated app users."
+    },
+    "settings/{userId}": {
+      "schema": "UserSettings",
+      "description": "Individual customization settings mapping directly to each user ID."
+    },
+    "dailyBriefs/{briefId}": {
+      "schema": "DailyBrief",
+      "description": "Morning executive briefs synthesized by AI for daily consumption."
+    },
+    "tasks/{taskId}": {
+      "schema": "DbTask",
+      "description": "Productivity schedule items indexed for daily planning."
+    }
+  }
+}

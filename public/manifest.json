@@ -1,0 +1,22 @@
+{
+  "short_name": "DailyBrief",
+  "name": "Daily Brief - Morning Overview",
+  "description": "Your ultimate personalized daily morning briefing summarizing weather, calendar, tasks, news, and emails with speech.",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=192&h=192&fit=crop&q=80",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=512&h=512&fit=crop&q=80",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#111111",
+  "theme_color": "#000000",
+  "display": "standalone",
+  "orientation": "portrait"
+}
